@@ -1,13 +1,8 @@
-//
-//  ViewController.swift
-//  ByteCoin
-//
-//  Created by Луиза Самойленко on 13.02.2023.
-//
-
 import UIKit
 
 class ViewController: UIViewController {
+
+    var coinManager = CoinManager()
 
     private let headerLabel: UILabel = {
         let label = UILabel()
@@ -24,7 +19,6 @@ class ViewController: UIViewController {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         contentView.backgroundColor = .black
         contentView.layer.cornerRadius = 40
-
         return contentView
     }()
 
@@ -63,7 +57,7 @@ class ViewController: UIViewController {
         label.textColor = .white
         label.font = UIFont.systemFont(ofSize: 25)
         label.textAlignment = .center
-        label.text = "USD"
+        label.text = CoinManager().currencyArray[0]
         return label
     }()
 
@@ -78,6 +72,9 @@ class ViewController: UIViewController {
         view.backgroundColor = .lightGray
         setupLayout()
         setupConstraint()
+        coinManager.delegate = self
+        currencyPicker.delegate = self
+        currencyPicker.dataSource = self
     }
 
     func setupLayout() {
@@ -121,34 +118,34 @@ extension ViewController {
 
 
 extension ViewController: UIPickerViewDelegate, UIPickerViewDataSource {
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return coinManager.currencyArray.count
+    }
+
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
         1
     }
 
-    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        1
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return coinManager.currencyArray[row]
+    }
+
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        let selectedCurrency = coinManager.currencyArray[row]
+        coinManager.getCoinPrice(for: selectedCurrency)
     }
 }
 
 
-import SwiftUI
-struct ListProvider: PreviewProvider {
-    static var previews: some View {
-        ContainterView().edgesIgnoringSafeArea(.all)
-            .previewDevice("iPhone 14 Pro Max")
-            .previewDisplayName("iPhone 14 Pro Max")
+extension ViewController: CoinManagerDelegate {
+    func didUpdatePrice(price: String, currency: String) {
+        DispatchQueue.main.async {
+            self.resultLabel.text = price
+            self.currencyLabel.text = currency
+        }
     }
 
-    struct ContainterView: UIViewControllerRepresentable {
-        let listVC = ViewController()
-        func makeUIViewController(context:
-                                  UIViewControllerRepresentableContext<ListProvider.ContainterView>) -> ViewController {
-            return listVC
-        }
-
-        func updateUIViewController(_ uiViewController:
-                                    ListProvider.ContainterView.UIViewControllerType, context:
-                                    UIViewControllerRepresentableContext<ListProvider.ContainterView>) {
-        }
+    func didFailWithError(error: Error) {
+        print(error)
     }
 }
